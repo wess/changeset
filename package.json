@@ -1,0 +1,85 @@
+{
+  "name": "changeset",
+  "version": "0.1.0",
+  "description": "A pure functional TypeScript database toolkit inspired by Elixir's Ecto library",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "type": "module",
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "node scripts/simple-build.js",
+    "build:clean": "rm -rf dist",
+    "build:esm": "bun build src/index.ts --outdir dist --target node --format esm --minify --outfile index.mjs",
+    "build:cjs": "bun build src/index.ts --outdir dist --target node --format cjs --minify --outfile index.js",
+    "build:types": "tsc --project tsconfig.build.json",
+    "dev": "bun --hot src/index.ts",
+    "test": "bun test",
+    "test:node": "node --test src/**/*.test.ts",
+    "test:all": "npm run test && npm run test:node",
+    "test:watch": "bun test --watch",
+    "lint": "biome check src/",
+    "lint:fix": "biome check --write src/",
+    "format": "biome format --write src/",
+    "prepublishOnly": "npm run build",
+    "release": "npm run build && npm publish"
+  },
+  "keywords": [
+    "database",
+    "orm",
+    "functional",
+    "typescript",
+    "query-builder",
+    "postgresql",
+    "sqlite",
+    "type-safe",
+    "schema",
+    "migrations",
+    "bun",
+    "node"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "pg": "^8.12.0"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.1.4",
+    "@types/bun": "latest",
+    "@types/node": "^24.2.1",
+    "@types/pg": "^8.11.10",
+    "bun-types": "^1.1.29",
+    "tsx": "^4.20.4",
+    "typescript": "^5.6.3"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "bun": ">=1.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/username/changeset.git"
+  },
+  "bugs": {
+    "url": "https://github.com/username/changeset/issues"
+  },
+  "homepage": "https://github.com/username/changeset#readme",
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "dist/**/*",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ]
+}

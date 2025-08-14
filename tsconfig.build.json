@@ -1,0 +1,32 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    // Override for building
+    "noEmit": false,
+    "emitDeclarationOnly": true,
+    "moduleResolution": "node",
+    "allowImportingTsExtensions": false,
+    
+    // Ensure compatibility
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "module": "ESNext",
+    
+    // Build output
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true
+  },
+  "include": [
+    "src/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "**/*.test.ts",
+    "**/*.spec.ts",
+    "tests/**/*"
+  ]
+}
