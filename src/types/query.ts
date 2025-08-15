@@ -14,7 +14,7 @@ export interface Query<T = unknown> {
   readonly offsetValue?: number;
   readonly groupByFields: string[];
   readonly havingConditions: WhereCondition[];
-  readonly distinctFields?: string[];
+  readonly distinctFields?: boolean;
 }
 
 // Where condition types
@@ -42,7 +42,9 @@ export type ComparisonOperator =
   | "is_not_null"
   | "and"
   | "or"
-  | "not";
+  | "not"
+  | "exists"
+  | "not_exists";
 
 export type LogicalOperator = "and" | "or" | "not";
 
@@ -51,15 +53,10 @@ export type SelectExpression<T> = (entity: T) => unknown;
 
 // Join types
 export interface JoinExpression {
-  type: "join" | "left_join" | "right_join" | "full_join";
-  schema: Schema;
+  type: "INNER" | "LEFT" | "RIGHT" | "FULL";
+  table: string;
   alias?: string;
-  on: JoinCondition;
-}
-
-export interface JoinCondition {
-  leftField: string;
-  rightField: string;
+  condition: string;
 }
 
 // Order by types

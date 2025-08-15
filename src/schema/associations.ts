@@ -73,3 +73,73 @@ export const manyToMany = (schema: Schema, options: AssociationOptions): Associa
     },
   };
 };
+
+/**
+ * Preload associations in a query
+ * @param associations - Array of association names to preload
+ * @returns Preload options
+ */
+export const preload = (associations: string[]): PreloadOptions => ({
+  associations,
+  nested: {},
+});
+
+/**
+ * Preload nested associations
+ * @param associations - Object mapping associations to their nested preloads
+ * @returns Preload options
+ */
+export const preloadNested = (
+  associations: Record<string, string[]>,
+): PreloadOptions => ({
+  associations: Object.keys(associations),
+  nested: associations,
+});
+
+export interface PreloadOptions {
+  associations: string[];
+  nested: Record<string, string[]>;
+}
+
+/**
+ * Build preload queries for associations
+ * @param schema - Source schema
+ * @param preloadOptions - Preload configuration
+ * @param records - Records to preload associations for
+ * @returns Map of association queries
+ */
+export const buildPreloadQueries = (
+  schema: Schema,
+  preloadOptions: PreloadOptions,
+  records: unknown[],
+): Record<string, unknown> => {
+  const queries: Record<string, unknown> = {};
+
+  for (const associationName of preloadOptions.associations) {
+    // This would build queries for each association
+    // For now, just a placeholder
+    queries[associationName] = {
+      association: associationName,
+      records: records.length,
+      nested: preloadOptions.nested[associationName] || [],
+    };
+  }
+
+  return queries;
+};
+
+/**
+ * Execute preload queries and attach results to records
+ * @param records - Source records
+ * @param preloadQueries - Preload queries to execute
+ * @returns Records with preloaded associations
+ */
+export const executePreloads = async (
+  records: unknown[],
+  preloadQueries: Record<string, unknown>,
+): Promise<unknown[]> => {
+  // This would execute the preload queries and attach results
+  // For now, just return the original records
+  console.log(`Executing preloads for ${Object.keys(preloadQueries).length} associations`);
+  return records;
+};

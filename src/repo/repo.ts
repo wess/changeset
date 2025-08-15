@@ -1,11 +1,11 @@
 // Repository implementation
 
-import { createPostgresConnection } from "../connection/postgres.ts";
+import { createPostgresAdapter } from "../connection/postgres.ts";
 import { createSqliteAdapter } from "../connection/sqlite.ts";
 import type { ConnectionOptions, DatabaseAdapter } from "../connection/types.ts";
 import type { Query } from "../types/query.ts";
 import type { Result } from "../types/result.ts";
-import { err, ok, createNotFoundError } from "../types/result.ts";
+import { createNotFoundError, err, ok } from "../types/result.ts";
 import { generateDeleteSql, generateSql, generateUpdateSql } from "./sql-generator.ts";
 
 // Repository interface
@@ -102,7 +102,11 @@ export const createRepoFunctions = (adapter: DatabaseAdapter) => {
     return ok(results);
   };
 
-  const update = async <T>(tableName: string, data: Partial<T>, id: unknown): Promise<Result<T>> => {
+  const update = async <T>(
+    tableName: string,
+    data: Partial<T>,
+    id: unknown,
+  ): Promise<Result<T>> => {
     const whereConditions = [{ field: "id", operator: "eq" as const, value: id }];
     const sqlQuery = generateUpdateSql(tableName, data as Record<string, unknown>, whereConditions);
     const result = await adapter.execute(sqlQuery);
@@ -120,7 +124,10 @@ export const createRepoFunctions = (adapter: DatabaseAdapter) => {
     return await adapter.queryOne<T>(selectQuery);
   };
 
-  const updateAll = async <T>(query: Query<T>, updates: Partial<T>): Promise<Result<{ count: number }>> => {
+  const updateAll = async <T>(
+    query: Query<T>,
+    updates: Partial<T>,
+  ): Promise<Result<{ count: number }>> => {
     const sqlQuery = generateUpdateSql(
       query.schema.tableName,
       updates as Record<string, unknown>,
@@ -174,7 +181,11 @@ export const createRepoFunctions = (adapter: DatabaseAdapter) => {
     return ok({ count: result.data.changes });
   };
 
-  const aggregate = async <T>(query: Query<T>, operation: string, field: string): Promise<Result<number>> => {
+  const aggregate = async <T>(
+    query: Query<T>,
+    operation: string,
+    field: string,
+  ): Promise<Result<number>> => {
     const { schema, whereConditions } = query;
 
     let sql = `SELECT ${operation.toUpperCase()}(${field}) as result FROM ${schema.tableName}`;
@@ -225,11 +236,39 @@ export const createRepoFunctions = (adapter: DatabaseAdapter) => {
 };
 
 /**
+ * Create a repository for a specific schema and adapter
+ * @param schema - The schema to use for this repository
+ * @param adapter - The database adapter to use
+ * @returns Repository instance
+ */
+export function createRepo<T extends Record<string, any>>(schema: any, adapter: DatabaseAdapter): Repo;
+
+/**
  * Create a repository instance
  * @param options - Database connection options
  * @returns Promise resolving to Repo result
  */
-export const createRepo = async (options: ConnectionOptions): Promise<Result<Repo>> => {
+export function createRepo(options: ConnectionOptions): Promise<Result<Repo>>;
+
+export function createRepo<T extends Record<string, any>>(
+  schemaOrOptions: any | ConnectionOptions,
+  adapter?: DatabaseAdapter
+): Repo | Promise<Result<Repo>> {
+  // If adapter is provided, this is the (schema, adapter) overload
+  if (adapter) {
+    return createRepoFunctions(adapter);
+  }
+  
+  // Otherwise, this is the (options) overload
+  return createRepoFromOptions(schemaOrOptions as ConnectionOptions);
+}
+
+/**
+ * Create a repository instance from connection options
+ * @param options - Database connection options
+ * @returns Promise resolving to Repo result
+ */
+const createRepoFromOptions = async (options: ConnectionOptions): Promise<Result<Repo>> => {
   let adapter: DatabaseAdapter;
 
   try {
@@ -238,13 +277,12 @@ export const createRepo = async (options: ConnectionOptions): Promise<Result<Rep
         adapter = createSqliteAdapter(options.config as any);
         break;
       case "postgresql": {
-        const connectionResult = await createPostgresConnection(options.config as any);
+        const adapter = createPostgresAdapter(options.config as any);
+        const connectionResult = await adapter.connect();
         if (!connectionResult.success) {
           return err(connectionResult.error);
         }
-        // We need to create a PostgreSQL adapter that wraps the connection
-        // For now, we'll focus on SQLite
-        throw new Error("PostgreSQL adapter not yet updated for new interface");
+        return ok(createRepoFunctions(adapter));
       }
       default:
         return err(new Error(`Unsupported database type: ${options.type}`));

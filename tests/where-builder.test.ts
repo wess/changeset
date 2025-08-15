@@ -2,7 +2,7 @@
 
 import { test, expect } from "bun:test";
 import { schema, f, from } from "../src/index.ts";
-import { and, or } from "../src/query/operators.ts";
+import { and, or } from "../src/query/where-builder.ts";
 
 // Test schema
 const UserSchema = schema("users", {

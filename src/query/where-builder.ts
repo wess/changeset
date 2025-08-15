@@ -131,3 +131,69 @@ export const combineConditions = (
 ): WhereCondition[] => {
   return conditions.flat();
 };
+
+/**
+ * Logical AND operator - all conditions must be true
+ */
+export const and = (...conditions: WhereCondition[]): WhereCondition => ({
+  field: "_logical",
+  operator: "and",
+  value: undefined,
+  conditions,
+});
+
+/**
+ * Logical OR operator - at least one condition must be true
+ */
+export const or = (...conditions: WhereCondition[]): WhereCondition => ({
+  field: "_logical", 
+  operator: "or",
+  value: undefined,
+  conditions,
+});
+
+/**
+ * Logical NOT operator - negates the condition
+ */
+export const not = (condition: WhereCondition): WhereCondition => ({
+  field: "_logical",
+  operator: "not", 
+  value: undefined,
+  conditions: [condition],
+});
+
+/**
+ * Check if a field exists (not null and not undefined)
+ */
+export const exists = (field: string): WhereCondition => ({
+  field,
+  operator: "is_not_null",
+  value: undefined,
+});
+
+/**
+ * Check if a field contains a substring (case sensitive)
+ */
+export const contains = (field: string, value: string): WhereCondition => ({
+  field,
+  operator: "like",
+  value: `%${value}%`,
+});
+
+/**
+ * Check if a field starts with a string
+ */
+export const startsWith = (field: string, value: string): WhereCondition => ({
+  field,
+  operator: "like", 
+  value: `${value}%`,
+});
+
+/**
+ * Check if a field ends with a string
+ */
+export const endsWith = (field: string, value: string): WhereCondition => ({
+  field,
+  operator: "like",
+  value: `%${value}`,
+});

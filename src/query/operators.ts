@@ -48,29 +48,7 @@ export const createFieldOperators = <T>(fieldName: string): FieldOperators<T> =>
   };
 };
 
-/**
- * Logical operators for combining conditions
- */
-export const and = (...conditions: WhereCondition[]): WhereCondition => ({
-  field: "__composite__",
-  operator: "and",
-  value: undefined,
-  conditions,
-});
-
-export const or = (...conditions: WhereCondition[]): WhereCondition => ({
-  field: "__composite__",
-  operator: "or",
-  value: undefined,
-  conditions,
-});
-
-export const not = (condition: WhereCondition): WhereCondition => ({
-  field: "__composite__",
-  operator: "not",
-  value: undefined,
-  conditions: [condition],
-});
+// Logical operators are exported from where-builder.ts to avoid conflicts
 
 /**
  * Helper function to flatten condition arrays

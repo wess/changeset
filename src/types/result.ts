@@ -58,20 +58,14 @@ export const createDatabaseError = (
   return error;
 };
 
-export const createValidationError = (
-  message: string,
-  field: string,
-): ValidationError => {
+export const createValidationError = (message: string, field: string): ValidationError => {
   const error = new Error(message) as ValidationError;
   error.name = "ValidationError";
   error.field = field;
   return error;
 };
 
-export const createNotFoundError = (
-  resource: string,
-  message?: string,
-): NotFoundError => {
+export const createNotFoundError = (resource: string, message?: string): NotFoundError => {
   const error = new Error(message || `${resource} not found`) as NotFoundError;
   error.name = "NotFoundError";
   error.resource = resource;

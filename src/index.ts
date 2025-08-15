@@ -1,5 +1,7 @@
 // Main exports for ecto-ts
 
+// Changeset system
+export * from "./changeset/index.ts";
 // Connection
 export * from "./connection/index.ts";
 // Query DSL

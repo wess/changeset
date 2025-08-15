@@ -20,11 +20,14 @@ export type SchemaToType<T extends Record<string, FieldDefinition>> = {
 // Schema instance interface
 export interface Schema<
   T extends Record<string, FieldDefinition> = Record<string, FieldDefinition>,
+  DataType = SchemaToType<T>
 > {
   tableName: string;
   fields: T;
   // Generate TypeScript type for this schema
   __type: SchemaToType<T>;
+  // Target data interface type
+  __dataType: DataType;
 }
 
 // Association types

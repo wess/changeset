@@ -59,18 +59,28 @@ export const select = <T, R>(selector: SelectExpression<SchemaToType<any>>): Que
 
 /**
  * Add ordering to the query
- * @param selector - Function to select field for ordering
+ * @param selector - Field name (string) or function to select field for ordering
  * @param direction - Sort direction (default: "asc")
  * @returns Query builder function
  */
 export const orderBy = <T>(
-  _selector: (entity: QueryProxy<SchemaToType<any>>) => string,
+  selector: string | ((entity: QueryProxy<SchemaToType<any>>) => string),
   direction: "asc" | "desc" = "asc",
 ): QueryBuilder<T> => {
   return (query: Query<T>) => {
-    // In a full implementation, we'd parse the selector function
+    // Extract field name from selector
+    let fieldName: string;
+    if (typeof selector === "string") {
+      fieldName = selector;
+    } else {
+      // For function selectors, we'd need to parse the function body or use a proxy
+      // For now, we'll extract it from the function call result
+      // This is a simplified implementation - in a full version we'd parse the function
+      fieldName = "id"; // placeholder - would need proper function parsing
+    }
+
     const orderExpression: OrderByExpression = {
-      field: "id", // placeholder
+      field: fieldName,
       direction,
     };
 
@@ -107,26 +117,67 @@ export const offset = <T>(count: number): QueryBuilder<T> => {
 };
 
 /**
- * Add join to the query
- * @param schema - Schema to join
- * @param alias - Alias for the joined table
- * @param onCondition - Join condition function
+ * Add distinct clause to the query
  * @returns Query builder function
  */
-export const join = <T>(
-  schema: Schema,
+export const distinct = <T>(): QueryBuilder<T> => {
+  return (query: Query<T>) => {
+    return updateQuery(query, {
+      distinctFields: true,
+    });
+  };
+};
+
+/**
+ * Add group by to the query
+ * @param fields - Fields to group by
+ * @returns Query builder function
+ */
+export const groupBy = <T>(...fields: string[]): QueryBuilder<T> => {
+  return (query: Query<T>) => {
+    return updateQuery(query, {
+      groupByFields: [...query.groupByFields, ...fields],
+    });
+  };
+};
+
+/**
+ * Add having clause to the query
+ * @param predicate - Having condition function
+ * @returns Query builder function
+ */
+export const having = <T>(
+  predicate: (entity: QueryProxy<SchemaToType<any>>) => WhereCondition | WhereCondition[],
+): QueryBuilder<T> => {
+  return (query: Query<T>) => {
+    const proxy = createQueryProxy<SchemaToType<any>>();
+    const conditions = predicate(proxy);
+    const havingConditions = Array.isArray(conditions) ? conditions : [conditions];
+
+    return updateQuery(query, {
+      havingConditions: [...query.havingConditions, ...havingConditions],
+    });
+  };
+};
+
+/**
+ * Add inner join to the query
+ * @param schema - Schema to join with
+ * @param onCondition - Join condition
+ * @param alias - Optional alias for the joined table
+ * @returns Query builder function
+ */
+export const innerJoin = <T, J>(
+  schema: Schema<J>,
+  onCondition: string,
   alias?: string,
-  _onCondition?: (left: any, right: any) => void,
 ): QueryBuilder<T> => {
   return (query: Query<T>) => {
     const joinExpression: JoinExpression = {
-      type: "join",
-      schema,
+      type: "INNER",
+      table: schema.tableName,
       alias,
-      on: {
-        leftField: "id", // placeholder
-        rightField: "id", // placeholder
-      },
+      condition: onCondition,
     };
 
     return updateQuery(query, {
@@ -134,6 +185,130 @@ export const join = <T>(
     });
   };
 };
+
+/**
+ * Add left join to the query
+ * @param schema - Schema to join with
+ * @param onCondition - Join condition
+ * @param alias - Optional alias for the joined table
+ * @returns Query builder function
+ */
+export const leftJoin = <T, J>(
+  schema: Schema<J>,
+  onCondition: string,
+  alias?: string,
+): QueryBuilder<T> => {
+  return (query: Query<T>) => {
+    const joinExpression: JoinExpression = {
+      type: "LEFT",
+      table: schema.tableName,
+      alias,
+      condition: onCondition,
+    };
+
+    return updateQuery(query, {
+      joins: [...query.joins, joinExpression],
+    });
+  };
+};
+
+/**
+ * Add right join to the query
+ * @param schema - Schema to join with
+ * @param onCondition - Join condition
+ * @param alias - Optional alias for the joined table
+ * @returns Query builder function
+ */
+export const rightJoin = <T, J>(
+  schema: Schema<J>,
+  onCondition: string,
+  alias?: string,
+): QueryBuilder<T> => {
+  return (query: Query<T>) => {
+    const joinExpression: JoinExpression = {
+      type: "RIGHT",
+      table: schema.tableName,
+      alias,
+      condition: onCondition,
+    };
+
+    return updateQuery(query, {
+      joins: [...query.joins, joinExpression],
+    });
+  };
+};
+
+/**
+ * Add full outer join to the query
+ * @param schema - Schema to join with
+ * @param onCondition - Join condition
+ * @param alias - Optional alias for the joined table
+ * @returns Query builder function
+ */
+export const fullJoin = <T, J>(
+  schema: Schema<J>,
+  onCondition: string,
+  alias?: string,
+): QueryBuilder<T> => {
+  return (query: Query<T>) => {
+    const joinExpression: JoinExpression = {
+      type: "FULL",
+      table: schema.tableName,
+      alias,
+      condition: onCondition,
+    };
+
+    return updateQuery(query, {
+      joins: [...query.joins, joinExpression],
+    });
+  };
+};
+
+/**
+ * Check if a field value exists in a subquery
+ * @param field - Field to check
+ * @param subquery - Subquery to check against
+ * @returns WhereCondition for use in where clauses
+ */
+export const inSubquery = (field: string, subquery: Query<unknown>): WhereCondition => ({
+  field,
+  operator: "in",
+  value: `(${subquery.toString()})`,
+});
+
+/**
+ * Check if a field value does NOT exist in a subquery
+ * @param field - Field to check
+ * @param subquery - Subquery to check against
+ * @returns WhereCondition for use in where clauses
+ */
+export const notInSubquery = (field: string, subquery: Query<unknown>): WhereCondition => ({
+  field,
+  operator: "not_in", 
+  value: `(${subquery.toString()})`,
+});
+
+/**
+ * Check if a subquery exists (returns any rows)
+ * @param subquery - Subquery to check
+ * @returns WhereCondition for use in where clauses
+ */
+export const existsSubquery = (subquery: Query<unknown>): WhereCondition => ({
+  field: "_exists",
+  operator: "exists",
+  value: `(${subquery.toString()})`,
+});
+
+/**
+ * Check if a subquery does NOT exist (returns no rows)
+ * @param subquery - Subquery to check
+ * @returns WhereCondition for use in where clauses
+ */
+export const notExistsSubquery = (subquery: Query<unknown>): WhereCondition => ({
+  field: "_not_exists",
+  operator: "not_exists",
+  value: `(${subquery.toString()})`,
+});
 
 /**
  * Create query builder methods that can be chained
@@ -155,7 +330,7 @@ export const createQueryMethods = <T>(initialQuery: Query<T>) => {
       return createQueryMethods(newQuery as Query<R>);
     },
     orderBy: (
-      selector: (entity: QueryProxy<SchemaToType<any>>) => string,
+      selector: string | ((entity: QueryProxy<SchemaToType<any>>) => string),
       direction: "asc" | "desc" = "asc",
     ) => {
       const newQuery = applyBuilder(orderBy(selector, direction));
@@ -169,8 +344,32 @@ export const createQueryMethods = <T>(initialQuery: Query<T>) => {
       const newQuery = applyBuilder(offset(count));
       return createQueryMethods(newQuery);
     },
-    join: (schema: Schema, alias?: string, onCondition?: (left: any, right: any) => void) => {
-      const newQuery = applyBuilder(join(schema, alias, onCondition));
+    distinct: () => {
+      const newQuery = applyBuilder(distinct());
+      return createQueryMethods(newQuery);
+    },
+    groupBy: (...fields: string[]) => {
+      const newQuery = applyBuilder(groupBy(...fields));
+      return createQueryMethods(newQuery);
+    },
+    having: (predicate: (entity: QueryProxy<SchemaToType<any>>) => WhereCondition | WhereCondition[]) => {
+      const newQuery = applyBuilder(having(predicate));
+      return createQueryMethods(newQuery);
+    },
+    innerJoin: <J>(schema: Schema<J>, onCondition: string, alias?: string) => {
+      const newQuery = applyBuilder(innerJoin(schema, onCondition, alias));
+      return createQueryMethods(newQuery);
+    },
+    leftJoin: <J>(schema: Schema<J>, onCondition: string, alias?: string) => {
+      const newQuery = applyBuilder(leftJoin(schema, onCondition, alias));
+      return createQueryMethods(newQuery);
+    },
+    rightJoin: <J>(schema: Schema<J>, onCondition: string, alias?: string) => {
+      const newQuery = applyBuilder(rightJoin(schema, onCondition, alias));
+      return createQueryMethods(newQuery);
+    },
+    fullJoin: <J>(schema: Schema<J>, onCondition: string, alias?: string) => {
+      const newQuery = applyBuilder(fullJoin(schema, onCondition, alias));
       return createQueryMethods(newQuery);
     },
     // Return the final query for execution
