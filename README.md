@@ -176,3 +176,5 @@ const deleted = await repo.delete("posts", postId);
 ## 📄 License
 
 MIT License - see [LICENSE](LICENSE) for details.
+
+♥ [Sponsor this project](https://github.com/sponsors/wess)
